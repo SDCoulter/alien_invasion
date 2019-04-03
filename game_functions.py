@@ -56,7 +56,7 @@ def update_screen(ai_settings, screen, ship, aliens, bullets):
     # Make the most recently drawn screen visible.
     pygame.display.flip()
 
-def update_bullets(bullets):
+def update_bullets(ai_settings, screen, ship, aliens, bullets):
     """Update position of bullets and get rid of old bullets."""
     # Update bullet positions.
     bullets.update()
@@ -65,6 +65,19 @@ def update_bullets(bullets):
     for bullet in bullets.copy():
         if bullet.rect.bottom <= 0:
             bullets.remove(bullet)
+
+    check_bullet_alien_collisions(ai_settings, screen, ship, aliens, bullets)
+
+
+def check_bullet_alien_collisions(ai_settings, screen, ship, aliens, bullets):
+    """Respond to bullet-alien collisions."""
+    # Remove any bulleta dn aliens that have collided.
+    collisions = pygame.sprite.groupcollide(bullets, aliens, True, True)
+
+    if len(aliens) == 0:
+        # Destroy existing bullets and create new fleet.
+        bullets.empty()
+        create_fleet(ai_settings, screen, ship, aliens)
 
 def get_number_aliens_x(ai_settings, alien_width):
     """Find the number of aliens that can fit horizontally."""
@@ -101,3 +114,24 @@ def create_fleet(ai_settings, screen, ship, aliens):
         for alien_number in range(number_aliens_x):
             create_alien(ai_settings, screen, aliens, alien_number,
                 row_number)
+
+def check_fleet_edges(ai_settings, aliens):
+    """Respond appropriately if any aliens have reached an edge."""
+    for alien in aliens.sprites():
+        if alien.check_edges():
+            change_fleet_direction(ai_settings, aliens)
+            break
+
+def change_fleet_direction(ai_settings, aliens):
+    """Drop entire fleet and change direction."""
+    for alien in aliens.sprites():
+        alien.rect.y += ai_settings.fleet_drop_speed
+    ai_settings.fleet_direction *= -1
+
+def update_aliens(ai_settings, aliens):
+    """
+    Check fleet poisiton at an edge
+        then update the positions of all aliens in the fleet.
+    """
+    check_fleet_edges(ai_settings, aliens)
+    aliens.update()
